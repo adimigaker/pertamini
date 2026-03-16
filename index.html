@@ -1,0 +1,1069 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0a0f0a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Pertamini">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Pertamini</title>
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./icons/icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@600;700;800&display=swap');
+:root{
+  --bg:#0a0f0a;--surface:#111711;--surface2:#192019;--border:#253025;
+  --accent:#39e75f;--accent-dim:rgba(57,231,95,.10);--accent-glow:rgba(57,231,95,.25);
+  --red:#ff4d4d;--red-dim:rgba(255,77,77,.10);
+  --gold:#ffd166;--gold-dim:rgba(255,209,102,.10);
+  --text:#e8f5e8;--text-dim:#3a4f3a;--text-mid:#6a8a6a;
+  --sell:#39e75f;--buy:#ff9f43;--sell-dim:rgba(57,231,95,.08);--buy-dim:rgba(255,159,67,.08);
+  --r:12px;--fn:'Syne',sans-serif;--fm:'Space Mono',monospace;
+  --bottom-h:66px;--sab:env(safe-area-inset-bottom,0px);--sat:env(safe-area-inset-top,0px);
+}
+body.light{
+  --bg:#f4faf4;--surface:#fff;--surface2:#eaf3ea;--border:#cde0cd;
+  --accent:#1a8c35;--accent-dim:rgba(26,140,53,.10);--accent-glow:rgba(26,140,53,.2);
+  --red:#d93025;--red-dim:rgba(217,48,37,.10);
+  --gold:#b8860b;--gold-dim:rgba(184,134,11,.10);
+  --text:#0d1f0d;--text-dim:#a0bfa0;--text-mid:#5a7a5a;
+  --sell:#1a8c35;--buy:#c0660d;--sell-dim:rgba(26,140,53,.08);--buy-dim:rgba(192,102,13,.08);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{background:var(--bg);color:var(--text);font-family:var(--fn);overflow-x:hidden;overscroll-behavior:none}
+#app{height:100vh;display:flex;flex-direction:column}
+.topbar{flex-shrink:0;background:var(--surface);border-bottom:1px solid var(--border);min-height:52px;padding:calc(var(--sat) + 10px) 16px 10px;display:flex;align-items:center;justify-content:space-between;z-index:50}
+.topbar-logo{font-family:var(--fn);font-size:18px;font-weight:800;color:var(--accent);letter-spacing:-.5px;display:flex;align-items:center;gap:8px}
+.logo-badge{display:inline-flex;align-items:center;justify-content:center;background:var(--accent-dim);border:1px solid var(--accent);border-radius:8px;padding:3px 10px;font-size:16px;line-height:1}
+.topbar-r{display:flex;gap:8px;align-items:center}
+.ibtn{background:var(--surface2);border:1px solid var(--border);border-radius:8px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-mid);font-size:15px;transition:all .2s}
+.ibtn:hover{border-color:var(--accent);color:var(--accent)}
+.page-wrap{flex:1;overflow-y:auto;overflow-x:hidden;padding-bottom:calc(var(--bottom-h) + var(--sab) + 12px);overscroll-behavior-y:contain}
+.page{display:none;padding:14px 14px 0;max-width:540px;margin:0 auto}
+.page.active{display:block}
+.bnav{flex-shrink:0;position:fixed;bottom:0;left:0;right:0;height:calc(var(--bottom-h) + var(--sab));background:var(--surface);border-top:1px solid var(--border);display:flex;align-items:flex-start;padding-top:6px;z-index:100}
+.nb{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 0;cursor:pointer;background:none;border:none;color:var(--text-dim);font-family:var(--fn);font-size:10px;font-weight:700;transition:color .2s;letter-spacing:.3px}
+.nb-icon{width:34px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:17px;transition:background .2s}
+.nb.active{color:var(--accent)}
+.nb.active .nb-icon{background:var(--accent-dim)}
+/* MAIN */
+.subtab-row{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:4px;margin-bottom:14px}
+.stb{border:none;border-radius:8px;padding:9px;font-family:var(--fn);font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;background:transparent;color:var(--text-dim);display:flex;align-items:center;justify-content:center;gap:6px}
+.stb.sell.on{background:var(--sell);color:#0a140a}
+.stb.buy.on{background:var(--buy);color:#0a140a}
+.calc-display{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px 14px;margin-bottom:10px;position:relative;overflow:hidden}
+.calc-display::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;transition:background .3s}
+.calc-display.sell::before{background:var(--sell)}
+.calc-display.buy::before{background:var(--buy)}
+.disp-label{font-family:var(--fm);font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px}
+.disp-value{font-family:var(--fm);font-size:42px;font-weight:700;letter-spacing:-1px;color:var(--text);text-align:right;min-height:52px;line-height:1.2;word-break:break-all;transition:color .2s}
+.disp-value.sell{color:var(--sell)}
+.disp-value.buy{color:var(--buy)}
+.disp-value.zero{color:var(--text-dim)}
+.disp-liter{font-family:var(--fm);font-size:11px;color:var(--text-mid);text-align:right;margin-top:4px;min-height:16px;letter-spacing:.5px}
+.disp-note{font-family:var(--fm);font-size:9px;color:var(--text-dim);text-align:right;margin-top:3px;min-height:14px;letter-spacing:1px}
+.promo-badge{display:none;align-items:center;gap:5px;background:var(--gold-dim);border:1px solid var(--gold);border-radius:20px;padding:3px 10px;margin-top:8px;font-family:var(--fm);font-size:9px;color:var(--gold);letter-spacing:1px}
+.numpad-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px}
+.nk{background:var(--surface);border:1px solid var(--border);border-radius:14px;height:64px;display:flex;align-items:center;justify-content:center;font-family:var(--fm);font-size:22px;font-weight:700;color:var(--text);cursor:pointer;transition:background .1s,transform .1s,border-color .15s;user-select:none;-webkit-tap-highlight-color:transparent}
+.nk:active{background:var(--border);transform:scale(.92)}
+.nk.sc{background:var(--surface2);font-size:14px;font-weight:800;color:var(--text-mid);letter-spacing:.5px;flex-direction:column;gap:2px}
+.nk.sc .sc-val{font-family:var(--fm);font-size:9px;color:var(--text-dim);letter-spacing:0}
+.nk.sc:active{background:var(--accent-dim);border-color:var(--accent);color:var(--accent)}
+.nk.sc:active .sc-val{color:var(--accent)}
+.nk.clr{background:var(--red-dim);border-color:transparent;color:var(--red);font-size:14px;font-weight:800}
+.nk.clr:active{background:var(--red);color:#fff}
+.nk.ok{background:var(--accent);border-color:var(--accent);color:#0a140a;font-size:13px;font-weight:800;letter-spacing:.5px;box-shadow:0 0 20px var(--accent-glow)}
+.nk.ok:active{opacity:.82;transform:scale(.97)}
+.dt-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:11px 14px;margin-bottom:10px;display:flex;align-items:center;gap:10px}
+.dt-icon{font-size:14px;color:var(--text-dim);flex-shrink:0}
+.dt-label{font-family:var(--fm);font-size:9px;color:var(--text-dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:3px}
+.dt-input{flex:1;background:transparent;border:none;outline:none;font-family:var(--fm);font-size:12px;color:var(--text);caret-color:var(--accent);min-width:0;color-scheme:dark}
+body.light .dt-input{color-scheme:light}
+.dt-input::-webkit-calendar-picker-indicator{filter:invert(.5);cursor:pointer}
+.dt-reset{background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:4px 9px;font-family:var(--fm);font-size:9px;color:var(--text-mid);cursor:pointer;transition:all .15s;white-space:nowrap;flex-shrink:0}
+.dt-reset:active{border-color:var(--accent);color:var(--accent)}
+.notes-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px}
+.notes-icon{font-size:14px;color:var(--text-dim);flex-shrink:0}
+.notes-input{flex:1;background:transparent;border:none;outline:none;font-family:var(--fn);font-size:13px;color:var(--text);caret-color:var(--accent)}
+.notes-input::placeholder{color:var(--text-dim)}
+/* HISTORY */
+.saldo-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:10px;position:relative;overflow:hidden}
+.saldo-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--sell),var(--accent))}
+.saldo-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px}
+.saldo-label{font-family:var(--fm);font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px}
+.saldo-value{font-family:var(--fm);font-size:26px;font-weight:700;letter-spacing:-1px}
+.saldo-value.pos{color:var(--sell)}
+.saldo-value.neg{color:var(--red)}
+.add-saldo-btn{background:var(--accent-dim);border:1px solid var(--accent);border-radius:10px;padding:6px 13px;font-family:var(--fn);font-size:11px;font-weight:800;color:var(--accent);cursor:pointer;transition:all .15s;white-space:nowrap;flex-shrink:0}
+.add-saldo-btn:active{background:var(--accent);color:#0a140a}
+.saldo-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.sg-item{background:var(--surface2);border-radius:10px;padding:10px 10px 12px}
+.sg-lbl{font-family:var(--fm);font-size:8px;color:var(--text-dim);letter-spacing:.5px;text-transform:uppercase;margin-bottom:5px}
+.sg-val{font-family:var(--fm);font-size:12px;font-weight:700;letter-spacing:-.3px}
+.sg-val.sell{color:var(--sell)}
+.sg-val.buy{color:var(--buy)}
+.sg-val.liter{color:var(--accent)}
+.sg-val.neg{color:var(--red)}
+.filter-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;margin-bottom:10px}
+.ft{font-family:var(--fm);font-size:9px;color:var(--text-dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px}
+.chip-row{display:flex;flex-wrap:wrap;gap:5px}
+.chip{font-family:var(--fm);font-size:10px;padding:5px 12px;border-radius:20px;background:var(--surface2);border:1px solid var(--border);color:var(--text-mid);cursor:pointer;transition:all .2s;white-space:nowrap}
+.chip.on.sell{background:var(--sell-dim);border-color:var(--sell);color:var(--sell)}
+.chip.on.buy{background:var(--buy-dim);border-color:var(--buy);color:var(--buy)}
+.chip.on{background:var(--accent-dim);border-color:var(--accent);color:var(--accent)}
+.periode-row{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-top:8px}
+.pchip{font-family:var(--fm);font-size:10px;padding:6px 4px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);color:var(--text-mid);cursor:pointer;transition:all .2s;text-align:center;white-space:nowrap}
+.pchip.on{background:var(--accent-dim);border-color:var(--accent);color:var(--accent);font-weight:700}
+.date-range-row{display:grid;grid-template-columns:1fr auto 1fr;gap:6px;align-items:center;margin-top:8px}
+.date-sep{font-family:var(--fm);font-size:10px;color:var(--text-dim);text-align:center}
+.if-s{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:7px 8px 9px;color:var(--text);font-family:var(--fm);font-size:10px;outline:none;transition:border-color .2s;color-scheme:dark}
+body.light .if-s{color-scheme:light}
+.if-s:focus{border-color:var(--accent)}
+.tx-date-hdr{font-family:var(--fm);font-size:9px;color:var(--text-dim);letter-spacing:1px;text-transform:uppercase;padding:10px 2px 5px}
+.day-summary{background:var(--surface2);border-radius:10px;padding:9px 12px;margin-bottom:6px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+.ds-item{display:flex;flex-direction:column;gap:2px}
+.ds-lbl{font-family:var(--fm);font-size:8px;color:var(--text-dim);letter-spacing:.5px;text-transform:uppercase}
+.ds-val{font-family:var(--fm);font-size:11px;font-weight:700;letter-spacing:-.3px}
+.ds-val.sell{color:var(--sell)}
+.ds-val.buy{color:var(--buy)}
+.ds-val.profit{color:var(--accent)}
+.ds-val.neg{color:var(--red)}
+.tx-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:11px 13px;display:flex;align-items:center;gap:10px;margin-bottom:5px;cursor:pointer;animation:fu .2s ease both;transition:opacity .12s,transform .1s}
+.tx-item:active{opacity:.75;transform:scale(.98)}
+@keyframes fu{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+.tx-ic{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.tx-ic.sell{background:var(--sell-dim)}
+.tx-ic.buy{background:var(--buy-dim)}
+.tx-ic.topup{background:var(--gold-dim)}
+.tx-body{flex:1;min-width:0}
+.tx-amt-row{display:flex;align-items:center;justify-content:space-between}
+.tx-desc{font-size:13px;font-weight:700}
+.tx-amt{font-family:var(--fm);font-size:13px;font-weight:700}
+.tx-amt.sell{color:var(--sell)}
+.tx-amt.buy{color:var(--buy)}
+.tx-amt.topup{color:var(--gold)}
+.tx-sub{display:flex;gap:6px;align-items:center;margin-top:3px;flex-wrap:wrap}
+.tx-time{font-family:var(--fm);font-size:9px;color:var(--text-dim);letter-spacing:.5px}
+.tx-liter{font-family:var(--fm);font-size:9px;color:var(--text-mid)}
+.tx-note{font-family:var(--fn);font-size:10px;color:var(--text-mid)}
+.tx-promo-tag{font-family:var(--fm);font-size:8px;padding:1px 6px;border-radius:8px;background:var(--gold-dim);color:var(--gold);border:1px solid var(--gold);letter-spacing:.5px}
+.empty{text-align:center;padding:52px 20px;color:var(--text-dim);font-family:var(--fm);font-size:11px}
+.empty-icon{font-size:36px;margin-bottom:10px}
+/* SETTINGS */
+.settings-section{margin-bottom:16px}
+.settings-title{font-family:var(--fm);font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;padding-left:2px}
+.settings-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.settings-row{display:flex;align-items:center;padding:13px 14px;gap:12px;border-bottom:1px solid var(--border)}
+.settings-row:last-child{border-bottom:none}
+.sr-icon{font-size:18px;flex-shrink:0;width:26px;text-align:center}
+.sr-info{flex:1}
+.sr-label{font-size:13px;font-weight:700;margin-bottom:2px}
+.sr-sub{font-family:var(--fm);font-size:9px;color:var(--text-dim);letter-spacing:.5px}
+.sr-input{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:7px 10px 9px;color:var(--text);font-family:var(--fm);font-size:12px;outline:none;width:110px;text-align:right;transition:border-color .2s}
+.sr-input:focus{border-color:var(--accent)}
+.sr-key-badge{font-family:var(--fm);font-size:11px;font-weight:700;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:3px 8px;color:var(--accent);flex-shrink:0}
+.toggle-wrap{display:flex;align-items:center}
+.toggle{width:42px;height:24px;background:var(--border);border-radius:12px;position:relative;cursor:pointer;transition:background .2s;flex-shrink:0}
+.toggle.on{background:var(--accent)}
+.toggle::after{content:'';position:absolute;top:3px;left:3px;width:18px;height:18px;background:var(--bg);border-radius:50%;transition:transform .2s}
+.toggle.on::after{transform:translateX(18px)}
+/* TOAST */
+.toast{position:fixed;bottom:calc(var(--bottom-h) + var(--sab) + 12px);left:50%;transform:translateX(-50%) translateY(16px);background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:9px 18px;font-family:var(--fm);font-size:11px;color:var(--text);z-index:300;white-space:nowrap;opacity:0;transition:opacity .2s,transform .2s;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.ok{border-color:var(--sell);color:var(--sell)}
+.toast.err{border-color:var(--red);color:var(--red)}
+/* OVERLAYS */
+#txdetail-overlay{position:fixed;inset:0;z-index:400;pointer-events:none}
+#txdetail-overlay.open{pointer-events:all}
+#txdetail-backdrop{position:absolute;inset:0;background:rgba(0,0,0,0);backdrop-filter:blur(0px);transition:background .25s ease,backdrop-filter .25s ease}
+#txdetail-overlay.open #txdetail-backdrop{background:rgba(0,0,0,.55);backdrop-filter:blur(4px)}
+#txdetail-sheet{position:absolute;left:50%;transform:translateX(-50%) scale(.3);transform-origin:center center;width:min(340px,92vw);background:var(--surface);border:1px solid var(--border);border-radius:22px;padding:0 16px 16px;box-shadow:0 24px 60px rgba(0,0,0,.5);opacity:0;transition:opacity .22s ease,transform .28s cubic-bezier(.34,1.56,.64,1)}
+#txdetail-overlay.open #txdetail-sheet{opacity:1;transform:translateX(-50%) scale(1)}
+.txd-header{display:flex;align-items:center;justify-content:space-between;padding:14px 0 12px;border-bottom:1px solid var(--border);margin-bottom:14px}
+.txd-badge{font-size:12px;font-weight:800;padding:4px 12px;border-radius:20px;letter-spacing:.5px;font-family:var(--fn)}
+.txd-badge.sell{background:var(--sell-dim);color:var(--sell)}
+.txd-badge.buy{background:var(--buy-dim);color:var(--buy)}
+.txd-badge.topup{background:var(--gold-dim);color:var(--gold)}
+.txd-close{background:var(--surface2);border:1px solid var(--border);border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;color:var(--text-dim)}
+.txd-amount{font-family:var(--fm);font-size:34px;font-weight:700;letter-spacing:-1px;margin-bottom:14px;text-align:center}
+.txd-amount.sell{color:var(--sell)}
+.txd-amount.buy{color:var(--buy)}
+.txd-amount.topup{color:var(--gold)}
+.txd-rows{display:flex;flex-direction:column;gap:9px;margin-bottom:16px}
+.txd-row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.txd-lbl{font-family:var(--fm);font-size:9px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;flex-shrink:0;min-width:72px;padding-top:1px}
+.txd-val{font-size:13px;font-weight:700;color:var(--text);text-align:right}
+.txd-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.txd-del{border:none;border-radius:12px;padding:12px;font-family:var(--fn);font-size:13px;font-weight:800;cursor:pointer;background:var(--red-dim);color:var(--red);border:1px solid var(--red);transition:opacity .15s,transform .1s}
+.txd-edit{border:none;border-radius:12px;padding:12px;font-family:var(--fn);font-size:13px;font-weight:800;cursor:pointer;background:var(--accent-dim);color:var(--accent);border:1px solid var(--accent);transition:opacity .15s,transform .1s}
+.txd-del:active,.txd-edit:active{opacity:.8;transform:scale(.96)}
+.del-confirm{grid-column:1/-1;background:var(--surface);border:1.5px solid var(--red);border-radius:12px;padding:11px 20px;text-align:center;animation:fu .18s ease;cursor:pointer;margin-top:4px}
+.del-confirm-txt{font-size:13px;font-weight:800;color:var(--red)}
+.modal-overlay{position:fixed;inset:0;z-index:500;pointer-events:none}
+.modal-overlay.open{pointer-events:all}
+.modal-backdrop{position:absolute;inset:0;background:rgba(0,0,0,0);backdrop-filter:blur(0px);transition:background .25s ease,backdrop-filter .25s ease}
+.modal-overlay.open .modal-backdrop{background:rgba(0,0,0,.6);backdrop-filter:blur(5px)}
+.modal-sheet{position:absolute;left:50%;transform:translateX(-50%) translateY(30px);width:min(360px,94vw);background:var(--surface);border:1px solid var(--border);border-radius:22px;padding:0 18px 18px;box-shadow:0 24px 60px rgba(0,0,0,.5);opacity:0;top:50%;margin-top:-210px;transition:opacity .22s ease,transform .26s cubic-bezier(.34,1.4,.64,1)}
+.modal-overlay.open .modal-sheet{opacity:1;transform:translateX(-50%) translateY(0)}
+.modal-header{display:flex;align-items:center;justify-content:space-between;padding:14px 0 12px;border-bottom:1px solid var(--border);margin-bottom:16px}
+.modal-title{font-size:15px;font-weight:800;color:var(--text)}
+.modal-close{background:var(--surface2);border:1px solid var(--border);border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;color:var(--text-dim)}
+.modal-field{margin-bottom:12px}
+.modal-lbl{font-family:var(--fm);font-size:9px;color:var(--text-dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px}
+.modal-input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:11px 13px 13px;color:var(--text);font-family:var(--fm);font-size:14px;outline:none;transition:border-color .2s;color-scheme:dark}
+body.light .modal-input{color-scheme:light}
+.modal-input:focus{border-color:var(--accent)}
+.modal-save{width:100%;border:none;border-radius:12px;padding:13px;font-family:var(--fn);font-size:14px;font-weight:800;cursor:pointer;background:var(--accent);color:#0a140a;box-shadow:0 0 16px var(--accent-glow);transition:opacity .15s,transform .1s;margin-top:4px}
+.modal-save:active{opacity:.82;transform:scale(.97)}
+.modal-save.gold{background:var(--gold);color:#0a0a0a;box-shadow:0 0 16px var(--gold-dim)}
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-logo"><span class="logo-badge">&#9981;</span>PERTAMINI</div>
+    <div class="topbar-r"><div class="ibtn" id="theme-btn" onclick="toggleTheme()">&#9728;</div></div>
+  </div>
+  <div class="page-wrap" id="pw">
+    <!-- MAIN -->
+    <div class="page active" id="page-main">
+      <div class="subtab-row">
+        <button class="stb sell on" id="stb-sell" onclick="setSubtab('sell')">&#8593; Penjualan</button>
+        <button class="stb buy" id="stb-buy" onclick="setSubtab('buy')">&#8595; Pembelian</button>
+      </div>
+      <div class="calc-display sell" id="calc-display">
+        <div class="disp-label" id="disp-label">PENJUALAN</div>
+        <div class="disp-value sell zero" id="disp-value">0</div>
+        <div class="disp-liter" id="disp-liter"></div>
+        <div class="disp-note" id="disp-note">-</div>
+        <div class="promo-badge" id="promo-badge">HARGA PROMO AKTIF</div>
+      </div>
+      <div class="dt-wrap">
+        <span class="dt-icon">&#128197;</span>
+        <div style="flex:1;min-width:0">
+          <div class="dt-label">Tanggal &amp; Waktu</div>
+          <input class="dt-input" type="datetime-local" id="tx-datetime">
+        </div>
+        <div class="dt-reset" onclick="resetDatetime()">Sekarang</div>
+      </div>
+      <div class="numpad-grid">
+        <div class="nk" onclick="nkPress('1')">1</div>
+        <div class="nk" onclick="nkPress('2')">2</div>
+        <div class="nk" onclick="nkPress('3')">3</div>
+        <div class="nk sc" onclick="nkPress('A')"><span>A</span><span class="sc-val" id="sc-a-val">-</span></div>
+        <div class="nk" onclick="nkPress('4')">4</div>
+        <div class="nk" onclick="nkPress('5')">5</div>
+        <div class="nk" onclick="nkPress('6')">6</div>
+        <div class="nk sc" onclick="nkPress('B')"><span>B</span><span class="sc-val" id="sc-b-val">-</span></div>
+        <div class="nk" onclick="nkPress('7')">7</div>
+        <div class="nk" onclick="nkPress('8')">8</div>
+        <div class="nk" onclick="nkPress('9')">9</div>
+        <div class="nk sc" onclick="nkPress('C')"><span>C</span><span class="sc-val" id="sc-c-val">-</span></div>
+        <div class="nk" onclick="nkPress('0')">0</div>
+        <div class="nk" style="font-size:16px;font-weight:800" onclick="nkPress('000')">000</div>
+        <div class="nk clr" onclick="nkPress('CLR')">CLR</div>
+        <div class="nk ok" onclick="nkPress('OK')">ENTER</div>
+      </div>
+      <div class="notes-wrap">
+        <span class="notes-icon">&#128221;</span>
+        <input class="notes-input" id="notes-input" type="text" placeholder="Catatan (opsional)..." maxlength="60">
+      </div>
+    </div>
+    <!-- HISTORY -->
+    <div class="page" id="page-history">
+      <div class="saldo-card">
+        <div class="saldo-top">
+          <div>
+            <div class="saldo-label">Saldo Kas</div>
+            <div class="saldo-value pos" id="saldo-value">Rp 0</div>
+          </div>
+          <div class="add-saldo-btn" onclick="openAddSaldo()">+ Tambah Saldo</div>
+        </div>
+        <div class="saldo-grid">
+          <div class="sg-item"><div class="sg-lbl">Total Jual</div><div class="sg-val sell" id="sg-sell">Rp 0</div></div>
+          <div class="sg-item"><div class="sg-lbl">Total Beli</div><div class="sg-val buy" id="sg-buy">Rp 0</div></div>
+          <div class="sg-item"><div class="sg-lbl">Sisa BBM</div><div class="sg-val liter" id="sg-liter">0 L</div></div>
+        </div>
+        <div class="saldo-grid" style="margin-top:8px">
+          <div class="sg-item" style="grid-column:1/-1;background:var(--accent-dim);border:1px solid var(--accent)">
+            <div class="sg-lbl" style="color:var(--accent)">Estimasi Profit</div>
+            <div class="sg-val sell" id="sg-profit">Rp 0</div>
+          </div>
+        </div>
+      </div>
+      <div class="filter-card">
+        <div class="ft">Filter Tipe</div>
+        <div class="chip-row">
+          <div class="chip on" id="chip-all" onclick="setFilter('all')">Semua</div>
+          <div class="chip sell" id="chip-sell" onclick="setFilter('sell')">&#8593; Jual</div>
+          <div class="chip buy" id="chip-buy" onclick="setFilter('buy')">&#8595; Beli</div>
+          <div class="chip" id="chip-topup" onclick="setFilter('topup')">&#128176; Saldo</div>
+        </div>
+        <div class="ft" style="margin-top:10px">Periode</div>
+        <div class="periode-row">
+          <div class="pchip on" id="pchip-all" onclick="setPeriode('all')">Semua</div>
+          <div class="pchip" id="pchip-today" onclick="setPeriode('today')">Hari ini</div>
+          <div class="pchip" id="pchip-week" onclick="setPeriode('week')">7 Hari</div>
+          <div class="pchip" id="pchip-month" onclick="setPeriode('month')">Bulan ini</div>
+          <div class="pchip" id="pchip-custom" onclick="setPeriode('custom')">Kustom</div>
+        </div>
+        <div class="date-range-row" id="custom-range-row" style="display:none">
+          <input class="if-s" type="date" id="filter-from" onchange="renderHistory()">
+          <span class="date-sep">-</span>
+          <input class="if-s" type="date" id="filter-to" onchange="renderHistory()">
+        </div>
+      </div>
+      <div id="tx-list"></div>
+    </div>
+    <!-- SETTINGS -->
+    <div class="page" id="page-settings">
+      <div class="settings-section">
+        <div class="settings-title">Harga BBM</div>
+        <div class="settings-card">
+          <div class="settings-row">
+            <div class="sr-icon">&#128722;</div>
+            <div class="sr-info"><div class="sr-label">Harga Beli / Liter</div><div class="sr-sub">Harga beli dari supplier</div></div>
+            <input class="sr-input" id="cfg-harga-beli" type="number" placeholder="0" inputmode="numeric" onchange="saveCfg()">
+          </div>
+          <div class="settings-row">
+            <div class="sr-icon">&#9981;</div>
+            <div class="sr-info"><div class="sr-label">Harga Jual / Liter</div><div class="sr-sub">Harga jual normal</div></div>
+            <input class="sr-input" id="cfg-harga" type="number" placeholder="0" inputmode="numeric" onchange="saveCfg()">
+          </div>
+          <div class="settings-row">
+            <div class="sr-icon">&#127991;</div>
+            <div class="sr-info"><div class="sr-label">Harga Jual Promo / Liter</div><div class="sr-sub">Aktifkan toggle di bawah</div></div>
+            <input class="sr-input" id="cfg-promo" type="number" placeholder="0" inputmode="numeric" onchange="saveCfg()" style="width:90px">
+          </div>
+          <div class="settings-row">
+            <div class="sr-icon">&#127919;</div>
+            <div class="sr-info"><div class="sr-label">Mode Promo</div><div class="sr-sub" id="promo-toggle-sub">Harga normal aktif</div></div>
+            <div class="toggle-wrap"><div class="toggle" id="promo-toggle" onclick="togglePromo()"></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="settings-section">
+        <div class="settings-title">Shortcut Kalkulator</div>
+        <div class="settings-card">
+          <div class="settings-row">
+            <div class="sr-icon">&#128273;</div>
+            <div class="sr-info"><div class="sr-label">Tombol A</div><div class="sr-sub">Tambah nominal saat ditekan</div></div>
+            <span class="sr-key-badge">A</span>
+            <input class="sr-input" id="cfg-a" type="number" placeholder="0" inputmode="numeric" onchange="saveCfg()">
+          </div>
+          <div class="settings-row">
+            <div class="sr-icon">&#128273;</div>
+            <div class="sr-info"><div class="sr-label">Tombol B</div><div class="sr-sub">Tambah nominal saat ditekan</div></div>
+            <span class="sr-key-badge">B</span>
+            <input class="sr-input" id="cfg-b" type="number" placeholder="0" inputmode="numeric" onchange="saveCfg()">
+          </div>
+          <div class="settings-row">
+            <div class="sr-icon">&#128273;</div>
+            <div class="sr-info"><div class="sr-label">Tombol C</div><div class="sr-sub">Tambah nominal saat ditekan</div></div>
+            <span class="sr-key-badge">C</span>
+            <input class="sr-input" id="cfg-c" type="number" placeholder="0" inputmode="numeric" onchange="saveCfg()">
+          </div>
+        </div>
+      </div>
+      <div class="settings-section">
+        <div class="settings-title">Data</div>
+        <div class="settings-card">
+          <div class="settings-row" style="cursor:pointer" onclick="exportJSON()">
+            <div class="sr-icon">&#128228;</div>
+            <div class="sr-info"><div class="sr-label">Export JSON</div><div class="sr-sub">Backup semua data transaksi</div></div>
+          </div>
+          <div class="settings-row" style="cursor:pointer" onclick="exportCSV()">
+            <div class="sr-icon">&#128202;</div>
+            <div class="sr-info"><div class="sr-label">Export CSV</div><div class="sr-sub">Buka di Excel / Spreadsheet</div></div>
+          </div>
+          <div class="settings-row" style="cursor:pointer" onclick="triggerImport()">
+            <div class="sr-icon">&#128229;</div>
+            <div class="sr-info"><div class="sr-label">Import JSON</div><div class="sr-sub">Pulihkan data dari file backup</div></div>
+          </div>
+          <div class="settings-row" style="cursor:pointer" onclick="resetData()">
+            <div class="sr-icon">&#128465;</div>
+            <div class="sr-info"><div class="sr-label" style="color:var(--red)">Hapus Semua Data</div><div class="sr-sub">Reset seluruh transaksi &amp; saldo</div></div>
+          </div>
+        </div>
+        <div id="reset-confirm-wrap"></div>
+        <input type="file" id="import-file" accept=".json" style="display:none" onchange="doImport(event)">
+      </div>
+      <div style="text-align:center;padding:20px 0 8px">
+        <div style="font-family:var(--fm);font-size:9px;color:var(--text-dim);letter-spacing:1px">PERTAMINI v1.2 - PENYIMPANAN LOKAL</div>
+      </div>
+    </div>
+  </div>
+  <nav class="bnav">
+    <button class="nb active" id="nb-main" onclick="goPage('main')"><div class="nb-icon">&#9981;</div><span>Kasir</span></button>
+    <button class="nb" id="nb-history" onclick="goPage('history')"><div class="nb-icon">&#128203;</div><span>Riwayat</span></button>
+    <button class="nb" id="nb-settings" onclick="goPage('settings')"><div class="nb-icon">&#9881;</div><span>Pengaturan</span></button>
+  </nav>
+</div>
+<!-- TX DETAIL -->
+<div id="txdetail-overlay">
+  <div id="txdetail-backdrop" onclick="closeTxDetail()"></div>
+  <div id="txdetail-sheet">
+    <div class="txd-header">
+      <div class="txd-badge" id="txd-badge">JUAL</div>
+      <div class="txd-close" onclick="closeTxDetail()">X</div>
+    </div>
+    <div class="txd-amount" id="txd-amount">Rp 0</div>
+    <div class="txd-rows">
+      <div class="txd-row"><span class="txd-lbl">Tanggal</span><span class="txd-val" id="txd-date">-</span></div>
+      <div class="txd-row"><span class="txd-lbl">Waktu</span><span class="txd-val" id="txd-time">-</span></div>
+      <div class="txd-row" id="txd-liter-row"><span class="txd-lbl">Volume</span><span class="txd-val" id="txd-liter">-</span></div>
+      <div class="txd-row" id="txd-note-row"><span class="txd-lbl">Catatan</span><span class="txd-val" id="txd-note">-</span></div>
+    </div>
+    <div class="txd-actions" id="txd-actions"></div>
+  </div>
+</div>
+<!-- EDIT TX -->
+<div class="modal-overlay" id="edit-overlay">
+  <div class="modal-backdrop" onclick="closeEditTx()"></div>
+  <div class="modal-sheet">
+    <div class="modal-header"><div class="modal-title">Edit Transaksi</div><div class="modal-close" onclick="closeEditTx()">X</div></div>
+    <div class="modal-field"><div class="modal-lbl">Nominal (Rp)</div><input class="modal-input" type="number" id="edit-amount" inputmode="numeric" placeholder="0"></div>
+    <div class="modal-field"><div class="modal-lbl">Tanggal &amp; Waktu</div><input class="modal-input" type="datetime-local" id="edit-datetime"></div>
+    <div class="modal-field"><div class="modal-lbl">Catatan</div><input class="modal-input" type="text" id="edit-note" placeholder="Opsional..." maxlength="60" style="font-size:13px"></div>
+    <button class="modal-save" onclick="saveEditTx()">Simpan Perubahan</button>
+  </div>
+</div>
+<!-- TAMBAH SALDO -->
+<div class="modal-overlay" id="saldo-overlay">
+  <div class="modal-backdrop" onclick="closeAddSaldo()"></div>
+  <div class="modal-sheet">
+    <div class="modal-header"><div class="modal-title">Tambah Saldo</div><div class="modal-close" onclick="closeAddSaldo()">X</div></div>
+    <div class="modal-field"><div class="modal-lbl">Nominal (Rp)</div><input class="modal-input" type="number" id="saldo-amount" inputmode="numeric" placeholder="0"></div>
+    <div class="modal-field"><div class="modal-lbl">Tanggal &amp; Waktu</div><input class="modal-input" type="datetime-local" id="saldo-datetime"></div>
+    <div class="modal-field"><div class="modal-lbl">Keterangan</div><input class="modal-input" type="text" id="saldo-note" placeholder="Mis: Modal ekspansi..." maxlength="60" style="font-size:13px"></div>
+    <button class="modal-save gold" onclick="saveAddSaldo()">Tambahkan Saldo</button>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+var currentPage = 'main';
+var currentSubtab = 'sell';
+var calcValue = 0;
+var inputBuffer = '';
+var activeFilter = 'all';
+var activePeriode = 'all';
+var selectedTxId = null;
+var cfg = {a:10000, b:5000, c:2000, hargaBeli:0, harga:0, promo:0, promoOn:false};
+var txs = [];
+
+function boot() {
+  loadData();
+  loadCfg();
+  updateShortcutLabels();
+  resetDatetime();
+  renderDisplay();
+  initTheme();
+  renderHistory();
+}
+
+function loadData() {
+  try { txs = JSON.parse(localStorage.getItem('pm_txs') || '[]'); } catch(e) { txs = []; }
+}
+function saveData() {
+  localStorage.setItem('pm_txs', JSON.stringify(txs));
+}
+
+function loadCfg() {
+  try {
+    var s = JSON.parse(localStorage.getItem('pm_cfg') || '{}');
+    cfg = Object.assign({a:10000,b:5000,c:2000,hargaBeli:0,harga:0,promo:0,promoOn:false}, s);
+  } catch(e) {}
+  document.getElementById('cfg-a').value = cfg.a || '';
+  document.getElementById('cfg-b').value = cfg.b || '';
+  document.getElementById('cfg-c').value = cfg.c || '';
+  document.getElementById('cfg-harga-beli').value = cfg.hargaBeli || '';
+  document.getElementById('cfg-harga').value = cfg.harga || '';
+  document.getElementById('cfg-promo').value = cfg.promo || '';
+  var tog = document.getElementById('promo-toggle');
+  tog.classList.toggle('on', cfg.promoOn);
+  document.getElementById('promo-toggle-sub').textContent = cfg.promoOn ? 'Harga promo aktif' : 'Harga normal aktif';
+}
+
+function saveCfg() {
+  cfg.a = parseInt(document.getElementById('cfg-a').value) || 0;
+  cfg.b = parseInt(document.getElementById('cfg-b').value) || 0;
+  cfg.c = parseInt(document.getElementById('cfg-c').value) || 0;
+  cfg.hargaBeli = parseInt(document.getElementById('cfg-harga-beli').value) || 0;
+  cfg.harga = parseInt(document.getElementById('cfg-harga').value) || 0;
+  cfg.promo = parseInt(document.getElementById('cfg-promo').value) || 0;
+  localStorage.setItem('pm_cfg', JSON.stringify(cfg));
+  updateShortcutLabels();
+  renderDisplay();
+  showToast('Pengaturan disimpan', 'ok');
+}
+
+function togglePromo() {
+  cfg.promoOn = !cfg.promoOn;
+  document.getElementById('promo-toggle').classList.toggle('on', cfg.promoOn);
+  document.getElementById('promo-toggle-sub').textContent = cfg.promoOn ? 'Harga promo aktif' : 'Harga normal aktif';
+  localStorage.setItem('pm_cfg', JSON.stringify(cfg));
+  renderDisplay();
+  showToast(cfg.promoOn ? 'Mode promo aktif' : 'Kembali ke harga normal', cfg.promoOn ? 'ok' : '');
+}
+
+function goPage(name) {
+  currentPage = name;
+  ['main','history','settings'].forEach(function(p) {
+    document.getElementById('page-'+p).classList.toggle('active', p === name);
+    document.getElementById('nb-'+p).classList.toggle('active', p === name);
+  });
+  if (name === 'history') renderHistory();
+  if (name === 'settings') loadCfg();
+}
+
+function setSubtab(tab) {
+  currentSubtab = tab;
+  document.getElementById('stb-sell').classList.toggle('on', tab === 'sell');
+  document.getElementById('stb-buy').classList.toggle('on', tab === 'buy');
+  renderDisplay();
+}
+
+function resetCalc() {
+  calcValue = 0;
+  inputBuffer = '';
+  document.getElementById('notes-input').value = '';
+  resetDatetime();
+}
+
+function resetDatetime() {
+  document.getElementById('tx-datetime').value = toLocalDTStr(new Date());
+}
+
+function toLocalDTStr(d) {
+  var p = function(n) { return String(n).padStart(2,'0'); };
+  return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+'T'+p(d.getHours())+':'+p(d.getMinutes());
+}
+
+function nkPress(key) {
+  if (key === 'CLR') { resetCalc(); renderDisplay(); return; }
+  if (key === 'OK')  { commitTransaction(); return; }
+  if (key === 'A' || key === 'B' || key === 'C') {
+    if (inputBuffer !== '') { calcValue += parseInt(inputBuffer) || 0; inputBuffer = ''; }
+    calcValue += key === 'A' ? cfg.a : key === 'B' ? cfg.b : cfg.c;
+    renderDisplay(); return;
+  }
+  if (key === '000') {
+    if (inputBuffer.length < 10) inputBuffer += '000';
+    renderDisplay(); return;
+  }
+  if (inputBuffer.length < 12) inputBuffer += key;
+  renderDisplay();
+}
+
+function getDisplayValue() {
+  return inputBuffer !== '' ? calcValue + parseInt(inputBuffer) : calcValue;
+}
+
+function getHargaAktif() {
+  return (cfg.promoOn && cfg.promo > 0) ? cfg.promo : cfg.harga;
+}
+
+function calcLiter(amount) {
+  var h = getHargaAktif();
+  return (!h || h === 0) ? null : amount / h;
+}
+
+function fmtLiter(l) {
+  return l === null ? '' : l.toFixed(2) + ' L';
+}
+
+function renderDisplay() {
+  var val = getDisplayValue();
+  var liter = calcLiter(val);
+  var disp = document.getElementById('disp-value');
+  var card = document.getElementById('calc-display');
+  document.getElementById('disp-label').textContent = currentSubtab === 'sell' ? 'PENJUALAN' : 'PEMBELIAN';
+  disp.className = 'disp-value ' + currentSubtab + (val === 0 ? ' zero' : '');
+  card.className = 'calc-display ' + currentSubtab;
+  disp.textContent = val === 0 ? '0' : fmtRp(val);
+  document.getElementById('disp-liter').textContent = (liter !== null && val > 0) ? '~ ' + fmtLiter(liter) : '';
+  var parts = [];
+  if (calcValue > 0) parts.push(fmtRp(calcValue));
+  if (inputBuffer !== '') parts.push(fmtRp(parseInt(inputBuffer)));
+  document.getElementById('disp-note').textContent = parts.length > 1 ? parts.join(' + ') : (val > 0 ? fmtK(val) : '-');
+  document.getElementById('promo-badge').style.display = cfg.promoOn ? 'inline-flex' : 'none';
+}
+
+function commitTransaction() {
+  if (inputBuffer !== '') { calcValue += parseInt(inputBuffer) || 0; inputBuffer = ''; }
+  if (calcValue <= 0) { showToast('Masukkan nominal dulu', 'err'); return; }
+  var dtVal = document.getElementById('tx-datetime').value;
+  var ts = dtVal ? new Date(dtVal).toISOString() : new Date().toISOString();
+  var h = getHargaAktif();
+  var liter = h > 0 ? calcValue / h : null;
+  var tx = {
+    id: Date.now().toString(),
+    type: currentSubtab,
+    amount: calcValue,
+    note: document.getElementById('notes-input').value.trim(),
+    ts: ts,
+    liter: liter,
+    harga: h,
+    hargaBeli: cfg.hargaBeli || 0,
+    isPromo: cfg.promoOn && cfg.promo > 0
+  };
+  txs.unshift(tx);
+  txs.sort(function(a,b){ return new Date(b.ts) - new Date(a.ts); });
+  saveData();
+  var label = currentSubtab === 'sell' ? 'Penjualan' : 'Pembelian';
+  showToast(label + ' ' + fmtRp(calcValue) + (liter ? ' - ' + fmtLiter(liter) : '') + ' dicatat', 'ok');
+  resetCalc();
+  renderDisplay();
+}
+
+function updateShortcutLabels() {
+  document.getElementById('sc-a-val').textContent = cfg.a ? fmtK(cfg.a) : '-';
+  document.getElementById('sc-b-val').textContent = cfg.b ? fmtK(cfg.b) : '-';
+  document.getElementById('sc-c-val').textContent = cfg.c ? fmtK(cfg.c) : '-';
+}
+
+function setFilter(f) {
+  activeFilter = f;
+  ['all','sell','buy','topup'].forEach(function(x) {
+    var el = document.getElementById('chip-'+x);
+    if (el) el.classList.toggle('on', x === f);
+  });
+  renderHistory();
+}
+
+function setPeriode(p) {
+  activePeriode = p;
+  ['all','today','week','month','custom'].forEach(function(x) {
+    var el = document.getElementById('pchip-'+x);
+    if (el) el.classList.toggle('on', x === p);
+  });
+  var rangeRow = document.getElementById('custom-range-row');
+  if (rangeRow) rangeRow.style.display = p === 'custom' ? 'grid' : 'none';
+  renderHistory();
+}
+
+function filterByPeriode(list) {
+  if (activePeriode === 'all') return list;
+  var now = new Date();
+  if (activePeriode === 'today') {
+    var d = now.toISOString().slice(0,10);
+    return list.filter(function(t){ return t.ts.slice(0,10) === d; });
+  }
+  if (activePeriode === 'week') {
+    var from = new Date(now);
+    from.setDate(from.getDate() - 6);
+    from.setHours(0,0,0,0);
+    return list.filter(function(t){ return new Date(t.ts) >= from; });
+  }
+  if (activePeriode === 'month') {
+    var y = now.getFullYear(), m = now.getMonth();
+    return list.filter(function(t) {
+      var dt = new Date(t.ts);
+      return dt.getFullYear() === y && dt.getMonth() === m;
+    });
+  }
+  if (activePeriode === 'custom') {
+    var fromEl = document.getElementById('filter-from');
+    var toEl = document.getElementById('filter-to');
+    var fromD = fromEl && fromEl.value ? new Date(fromEl.value + 'T00:00:00') : null;
+    var toD = toEl && toEl.value ? new Date(toEl.value + 'T23:59:59') : null;
+    return list.filter(function(t) {
+      var dt = new Date(t.ts);
+      return (!fromD || dt >= fromD) && (!toD || dt <= toD);
+    });
+  }
+  return list;
+}
+
+function renderHistory() {
+  var allSell  = txs.filter(function(t){ return t.type==='sell'; }).reduce(function(s,t){ return s+t.amount; }, 0);
+  var allBuy   = txs.filter(function(t){ return t.type==='buy'; }).reduce(function(s,t){ return s+t.amount; }, 0);
+  var allTopup = txs.filter(function(t){ return t.type==='topup'; }).reduce(function(s,t){ return s+t.amount; }, 0);
+  var saldo = allSell - allBuy + allTopup;
+  // Hitung liter: pakai tx.liter jika ada, fallback hitung dari harga di cfg
+  function getLiter(t) {
+    if (t.liter) return t.liter;
+    var h = t.harga && t.harga > 0 ? t.harga : cfg.harga;
+    return (h && h > 0) ? t.amount / h : null;
+  }
+  function getHargaBeli(t) {
+    if (t.hargaBeli && t.hargaBeli > 0) return t.hargaBeli;
+    return cfg.hargaBeli && cfg.hargaBeli > 0 ? cfg.hargaBeli : null;
+  }
+  var literBeli = txs.filter(function(t){ return t.type==='buy'; }).reduce(function(s,t){
+    var l = getLiter(t); return l ? s + l : s;
+  }, 0);
+  var literJual = txs.filter(function(t){ return t.type==='sell'; }).reduce(function(s,t){
+    var l = getLiter(t); return l ? s + l : s;
+  }, 0);
+  var sisaL = literBeli - literJual;
+  var profitJual = txs.filter(function(t){ return t.type==='sell'; }).reduce(function(s,t){
+    var l = getLiter(t);
+    var hb = getHargaBeli(t);
+    var hj = t.harga && t.harga > 0 ? t.harga : cfg.harga;
+    if (!l || !hb || !hj) return s;
+    return s + (hj - hb) * l;
+  }, 0);
+
+  var sv = document.getElementById('saldo-value');
+  sv.textContent = (saldo < 0 ? '-' : '') + fmtRp(Math.abs(saldo));
+  sv.className = 'saldo-value ' + (saldo >= 0 ? 'pos' : 'neg');
+  document.getElementById('sg-sell').textContent = fmtRp(allSell);
+  document.getElementById('sg-buy').textContent  = fmtRp(allBuy);
+  var litEl = document.getElementById('sg-liter');
+  litEl.textContent = sisaL.toFixed(2) + ' L';
+  litEl.className = 'sg-val ' + (sisaL >= 0 ? 'liter' : 'neg');
+  var profitEl = document.getElementById('sg-profit');
+  if (profitEl) {
+    profitEl.textContent = (profitJual < 0 ? '-' : '') + fmtRp(Math.abs(profitJual));
+    profitEl.className = 'sg-val ' + (profitJual >= 0 ? 'sell' : 'neg');
+  }
+
+  var filtered = activeFilter === 'all' ? txs.slice() : txs.filter(function(t){ return t.type === activeFilter; });
+  filtered = filterByPeriode(filtered);
+
+  var list = document.getElementById('tx-list');
+  if (filtered.length === 0) {
+    list.innerHTML = '<div class="empty"><div class="empty-icon">&#128235;</div>Belum ada transaksi</div>';
+    return;
+  }
+
+  var groups = {};
+  filtered.forEach(function(t) {
+    var d = t.ts.slice(0,10);
+    if (!groups[d]) groups[d] = [];
+    groups[d].push(t);
+  });
+
+  var html = '';
+  Object.keys(groups).sort(function(a,b){ return b.localeCompare(a); }).forEach(function(date) {
+    var dayAll = txs.filter(function(t){ return t.ts.slice(0,10) === date; });
+    var daySellRp = dayAll.filter(function(t){ return t.type==='sell'; }).reduce(function(s,t){ return s+t.amount; }, 0);
+    var dayBuyRp  = dayAll.filter(function(t){ return t.type==='buy'; }).reduce(function(s,t){ return s+t.amount; }, 0);
+    var daySellL  = dayAll.filter(function(t){ return t.type==='sell'; }).reduce(function(s,t){
+      var l = getLiter(t); return l ? s+l : s;
+    }, 0);
+    var dayBuyL   = dayAll.filter(function(t){ return t.type==='buy'; }).reduce(function(s,t){
+      var l = getLiter(t); return l ? s+l : s;
+    }, 0);
+    var dayProfit = dayAll.filter(function(t){ return t.type==='sell'; }).reduce(function(s,t){
+      var l = getLiter(t);
+      var hb = getHargaBeli(t);
+      var hj = t.harga && t.harga > 0 ? t.harga : cfg.harga;
+      if (!l || !hb || !hj) return s;
+      return s + (hj - hb) * l;
+    }, 0);
+    var hasPrices = dayAll.some(function(t){ return getLiter(t) !== null; });
+
+    html += '<div class="tx-date-hdr">' + fmtDate(date) + '</div>';
+    html += '<div class="day-summary">';
+    html += '<div class="ds-item"><span class="ds-lbl">Jual</span><span class="ds-val sell">' + fmtRp(daySellRp) + '</span>';
+    if (hasPrices && daySellL > 0) html += '<span class="ds-lbl" style="margin-top:2px">' + daySellL.toFixed(2) + ' L</span>';
+    html += '</div>';
+    html += '<div class="ds-item"><span class="ds-lbl">Beli</span><span class="ds-val buy">' + fmtRp(dayBuyRp) + '</span>';
+    if (hasPrices && dayBuyL > 0) html += '<span class="ds-lbl" style="margin-top:2px">' + dayBuyL.toFixed(2) + ' L</span>';
+    html += '</div>';
+    html += '<div class="ds-item"><span class="ds-lbl">Profit</span><span class="ds-val ' + (dayProfit >= 0 ? 'profit' : 'neg') + '">' + (dayProfit < 0 ? '-' : '') + fmtRp(Math.abs(dayProfit)) + '</span></div>';
+    html += '</div>';
+
+    groups[date].forEach(function(t) {
+      var time = new Date(t.ts).toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
+      var icon  = t.type === 'sell' ? '&#8593;' : t.type === 'buy' ? '&#8595;' : '&#128176;';
+      var label = t.type === 'sell' ? 'Penjualan' : t.type === 'buy' ? 'Pembelian' : 'Tambah Saldo';
+      var literStr = t.liter ? fmtLiter(t.liter) : '';
+      var promoTag = t.isPromo ? '<span class="tx-promo-tag">PROMO</span>' : '';
+      html += '<div class="tx-item" onclick="openTxDetail(\'' + t.id + '\')">';
+      html += '<div class="tx-ic ' + t.type + '">' + icon + '</div>';
+      html += '<div class="tx-body">';
+      html += '<div class="tx-amt-row"><div class="tx-desc">' + label + '</div><div class="tx-amt ' + t.type + '">' + fmtRp(t.amount) + '</div></div>';
+      html += '<div class="tx-sub">';
+      html += '<span class="tx-time">' + time + '</span>';
+      if (literStr) html += '<span class="tx-liter">- ' + literStr + '</span>';
+      html += promoTag;
+      if (t.note) html += '<span class="tx-note">- ' + t.note + '</span>';
+      html += '</div></div></div>';
+    });
+  });
+  list.innerHTML = html;
+}
+
+function openTxDetail(id) {
+  var tx = txs.find(function(t){ return t.id === id; });
+  if (!tx) return;
+  selectedTxId = id;
+  var d = new Date(tx.ts);
+  var typeLabel = tx.type === 'sell' ? 'JUAL' : tx.type === 'buy' ? 'BELI' : 'SALDO';
+  document.getElementById('txd-badge').textContent = typeLabel;
+  document.getElementById('txd-badge').className = 'txd-badge ' + tx.type;
+  document.getElementById('txd-amount').textContent = fmtRp(tx.amount);
+  document.getElementById('txd-amount').className = 'txd-amount ' + tx.type;
+  document.getElementById('txd-date').textContent = fmtDate(tx.ts.slice(0,10));
+  document.getElementById('txd-time').textContent = d.toLocaleTimeString('id-ID', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  var litRow = document.getElementById('txd-liter-row');
+  if (tx.liter) {
+    var profitPerL = tx.harga && tx.hargaBeli ? tx.harga - tx.hargaBeli : null;
+    var profitTotal = profitPerL && tx.type === 'sell' ? profitPerL * tx.liter : null;
+    var litText = fmtLiter(tx.liter);
+    if (tx.harga) litText += ' @ ' + fmtRp(tx.harga) + '/L';
+    if (tx.isPromo) litText += ' [PROMO]';
+    if (profitTotal !== null) litText += ' - margin ' + fmtRp(profitTotal);
+    document.getElementById('txd-liter').textContent = litText;
+    litRow.style.display = 'flex';
+  } else {
+    litRow.style.display = 'none';
+  }
+  var noteRow = document.getElementById('txd-note-row');
+  if (tx.note) {
+    document.getElementById('txd-note').textContent = tx.note;
+    noteRow.style.display = 'flex';
+  } else {
+    noteRow.style.display = 'none';
+  }
+  var actionsHTML;
+  if (tx.type === 'topup') {
+    actionsHTML = '<button class="txd-del" style="grid-column:1/-1" onclick="deleteTx()">Hapus</button>'
+      + '<div id="del-confirm-bubble" style="display:none" class="del-confirm" onclick="confirmDelete()">'
+      + '<div class="del-confirm-txt">Yakin hapus entri saldo ini?</div></div>';
+  } else {
+    actionsHTML = '<button class="txd-edit" onclick="openEditTx()">Edit</button>'
+      + '<button class="txd-del" onclick="deleteTx()">Hapus</button>'
+      + '<div id="del-confirm-bubble" style="display:none" class="del-confirm" onclick="confirmDelete()">'
+      + '<div class="del-confirm-txt">Yakin hapus transaksi ini?</div></div>';
+  }
+  document.getElementById('txd-actions').innerHTML = actionsHTML;
+  var sheet = document.getElementById('txdetail-sheet');
+  sheet.style.top = '50%';
+  sheet.style.marginTop = '-180px';
+  document.getElementById('txdetail-overlay').classList.add('open');
+}
+
+function closeTxDetail() {
+  document.getElementById('txdetail-overlay').classList.remove('open');
+  selectedTxId = null;
+}
+
+function deleteTx() {
+  var b = document.getElementById('del-confirm-bubble');
+  b.style.display = b.style.display === 'none' ? 'block' : 'none';
+}
+
+function confirmDelete() {
+  if (!selectedTxId) return;
+  txs = txs.filter(function(t){ return t.id !== selectedTxId; });
+  saveData(); closeTxDetail(); renderHistory();
+  showToast('Dihapus', 'err');
+}
+
+function openEditTx() {
+  var tx = txs.find(function(t){ return t.id === selectedTxId; });
+  if (!tx) return;
+  document.getElementById('edit-amount').value = tx.amount;
+  document.getElementById('edit-datetime').value = toLocalDTStr(new Date(tx.ts));
+  document.getElementById('edit-note').value = tx.note || '';
+  document.getElementById('edit-overlay').classList.add('open');
+}
+function closeEditTx() { document.getElementById('edit-overlay').classList.remove('open'); }
+
+function saveEditTx() {
+  var tx = txs.find(function(t){ return t.id === selectedTxId; });
+  if (!tx) return;
+  var newAmt = parseInt(document.getElementById('edit-amount').value);
+  var newDT  = document.getElementById('edit-datetime').value;
+  var newNote= document.getElementById('edit-note').value.trim();
+  if (!newAmt || newAmt <= 0) { showToast('Nominal tidak valid', 'err'); return; }
+  if (!newDT) { showToast('Tanggal tidak valid', 'err'); return; }
+  tx.amount = newAmt;
+  tx.ts     = new Date(newDT).toISOString();
+  tx.note   = newNote;
+  tx.liter  = tx.harga && tx.harga > 0 ? newAmt / tx.harga : null;
+  txs.sort(function(a,b){ return new Date(b.ts) - new Date(a.ts); });
+  saveData(); closeEditTx(); closeTxDetail(); renderHistory();
+  showToast('Transaksi diperbarui', 'ok');
+}
+
+function openAddSaldo() {
+  document.getElementById('saldo-amount').value = '';
+  document.getElementById('saldo-datetime').value = toLocalDTStr(new Date());
+  document.getElementById('saldo-note').value = '';
+  document.getElementById('saldo-overlay').classList.add('open');
+}
+function closeAddSaldo() { document.getElementById('saldo-overlay').classList.remove('open'); }
+
+function saveAddSaldo() {
+  var amt  = parseInt(document.getElementById('saldo-amount').value);
+  var dt   = document.getElementById('saldo-datetime').value;
+  var note = document.getElementById('saldo-note').value.trim();
+  if (!amt || amt <= 0) { showToast('Masukkan nominal', 'err'); return; }
+  var tx = {
+    id: Date.now().toString(), type:'topup', amount:amt, note:note,
+    ts: dt ? new Date(dt).toISOString() : new Date().toISOString(),
+    liter:null, harga:null, isPromo:false
+  };
+  txs.unshift(tx);
+  txs.sort(function(a,b){ return new Date(b.ts) - new Date(a.ts); });
+  saveData(); closeAddSaldo(); renderHistory();
+  showToast('Saldo ' + fmtRp(amt) + ' ditambahkan', 'ok');
+}
+
+function resetData() {
+  var wrap = document.getElementById('reset-confirm-wrap');
+  if (wrap.innerHTML !== '') { wrap.innerHTML = ''; return; }
+  wrap.innerHTML = '<div style="margin-top:8px;background:var(--surface2);border:1.5px solid var(--red);border-radius:10px;padding:12px 14px;text-align:center;cursor:pointer" onclick="confirmReset()"><span style="font-size:13px;font-weight:800;color:var(--red)">Yakin hapus semua data?</span></div>';
+}
+function confirmReset() {
+  txs = []; saveData();
+  document.getElementById('reset-confirm-wrap').innerHTML = '';
+  renderHistory();
+  showToast('Semua data dihapus', 'err');
+}
+
+function exportJSON() {
+  if (txs.length === 0) { showToast('Tidak ada data', 'err'); return; }
+  var payload = {version:2, exportedAt:new Date().toISOString(), txs:txs};
+  var blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
+  var url  = URL.createObjectURL(blob);
+  var a    = document.createElement('a');
+  var stamp = pad2(new Date().getFullYear()) + pad2(new Date().getMonth()+1) + pad2(new Date().getDate());
+  a.href = url;
+  a.download = 'pertamini-backup-' + stamp + '.json';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(function(){ URL.revokeObjectURL(url); a.remove(); }, 500);
+  showToast('Exported ' + txs.length + ' transaksi', 'ok');
+}
+
+function exportCSV() {
+  if (txs.length === 0) { showToast('Tidak ada data', 'err'); return; }
+  var headers = ['ID','Tipe','Nominal','Liter','Harga Jual/L','Harga Beli/L','Promo','Catatan','Tanggal','Waktu'];
+  var rows = txs.map(function(t) {
+    var dt = new Date(t.ts);
+    return [
+      t.id,
+      t.type==='sell'?'Penjualan':t.type==='buy'?'Pembelian':'Tambah Saldo',
+      t.amount,
+      t.liter != null ? t.liter.toFixed(4) : '',
+      t.harga || '',
+      t.hargaBeli || '',
+      t.isPromo ? 'Ya' : 'Tidak',
+      '"' + (t.note||'').replace(/"/g,'""') + '"',
+      dt.toLocaleDateString('id-ID'),
+      dt.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit'})
+    ].join(',');
+  });
+  var nl = '\r\n';
+  var csv = '\uFEFF' + headers.join(',') + nl + rows.join(nl);
+  var blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
+  var url  = URL.createObjectURL(blob);
+  var a    = document.createElement('a');
+  var stamp = pad2(new Date().getFullYear()) + pad2(new Date().getMonth()+1) + pad2(new Date().getDate());
+  a.href = url;
+  a.download = 'pertamini-' + stamp + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(function(){ URL.revokeObjectURL(url); a.remove(); }, 500);
+  showToast('Exported CSV ' + txs.length + ' baris', 'ok');
+}
+
+function triggerImport() {
+  document.getElementById('import-file').value = '';
+  document.getElementById('import-file').click();
+}
+
+function doImport(e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(ev) {
+    try {
+      var raw = JSON.parse(ev.target.result);
+      var imported = Array.isArray(raw) ? raw : (raw.txs || []);
+      if (!Array.isArray(imported) || imported.length === 0) {
+        showToast('File tidak valid atau kosong', 'err'); return;
+      }
+      var merged = txs.slice();
+      var added = 0;
+      imported.forEach(function(t) {
+        if (!merged.find(function(x){ return x.id === t.id; })) {
+          merged.push(t); added++;
+        }
+      });
+      merged.sort(function(a,b){ return new Date(b.ts) - new Date(a.ts); });
+      txs = merged; saveData(); renderHistory();
+      showToast(added + ' transaksi berhasil diimpor', 'ok');
+    } catch(err) {
+      showToast('Gagal membaca file JSON', 'err');
+    }
+  };
+  reader.readAsText(file);
+}
+
+function pad2(n) { return String(n).padStart(2,'0'); }
+
+function initTheme() {
+  var saved = localStorage.getItem('pm_theme');
+  var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  applyTheme(saved || (prefersDark ? 'dark' : 'light'));
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
+    if (!localStorage.getItem('pm_theme')) applyTheme(e.matches ? 'dark' : 'light');
+  });
+}
+function applyTheme(mode) {
+  document.body.classList.toggle('light', mode === 'light');
+  var btn = document.getElementById('theme-btn');
+  if (btn) btn.textContent = mode === 'light' ? '\uD83C\uDF19' : '\u2600';
+  var meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.content = mode === 'light' ? '#ffffff' : '#0a0f0a';
+}
+function toggleTheme() {
+  var next = document.body.classList.contains('light') ? 'dark' : 'light';
+  localStorage.setItem('pm_theme', next);
+  applyTheme(next);
+}
+
+var toastTimer;
+function showToast(msg, type) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + (type || '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ t.classList.remove('show'); }, 2400);
+}
+
+function fmtRp(n) { return 'Rp ' + Math.round(n).toLocaleString('id-ID'); }
+function fmtK(n) {
+  if (n >= 1000000) return (n/1000000).toFixed(n%1000000===0?0:1) + 'jt';
+  if (n >= 1000)    return (n/1000).toFixed(n%1000===0?0:1) + 'k';
+  return String(n);
+}
+function fmtDate(d) {
+  var months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+  var dt = new Date(d + 'T00:00:00');
+  var today = new Date(); today.setHours(0,0,0,0);
+  var diff = Math.round((today - dt) / 86400000);
+  if (diff === 0) return 'Hari ini';
+  if (diff === 1) return 'Kemarin';
+  return dt.getDate() + ' ' + months[dt.getMonth()] + ' ' + dt.getFullYear();
+}
+
+boot();
+
+// Register Service Worker
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('./sw.js').then(function(reg) {
+      console.log('SW registered:', reg.scope);
+    }).catch(function(err) {
+      console.log('SW error:', err);
+    });
+  });
+}
+</script>
+</body>
+</html>
