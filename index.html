@@ -354,6 +354,34 @@ body.light .modal-input{color-scheme:light}
 }
 .day-group.expanded .day-body { max-height: 2000px; }
 .day-body-inner { padding-top: 4px; padding-bottom: 2px; }
+
+/* SUPABASE SYNC */
+.sync-status {
+  display: flex; align-items: center; gap: 6px;
+  font-family: var(--fm); font-size: 9px; letter-spacing: .5px;
+  padding: 3px 10px; border-radius: 20px;
+  border: 1px solid var(--border); background: var(--surface2);
+  color: var(--text-dim); transition: all .3s; flex-shrink: 0;
+}
+.sync-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--text-dim); flex-shrink: 0; transition: background .3s;
+}
+.sync-status.ok    { border-color: var(--sell);  color: var(--sell); }
+.sync-status.ok    .sync-dot { background: var(--sell); box-shadow: 0 0 5px var(--sell); }
+.sync-status.syncing { border-color: var(--gold); color: var(--gold); }
+.sync-status.syncing .sync-dot { background: var(--gold); animation: blink 1s infinite; }
+.sync-status.err   { border-color: var(--red);   color: var(--red); }
+.sync-status.err   .sync-dot { background: var(--red); }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+.sr-input-full {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 7px 10px 9px;
+  color: var(--text); font-family: var(--fm); font-size: 11px;
+  outline: none; width: 100%; transition: border-color .2s;
+}
+.sr-input-full:focus { border-color: var(--accent); }
+.sr-input-full::placeholder { color: var(--text-dim); }
 ::-webkit-scrollbar{width:3px}
 ::-webkit-scrollbar-track{background:var(--bg)}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
@@ -363,7 +391,10 @@ body.light .modal-input{color-scheme:light}
 <div id="app">
   <div class="topbar">
     <div class="topbar-logo"><span class="logo-badge">&#9981;</span>PERTAMINI</div>
-    <div class="topbar-r"><div class="ibtn" id="theme-btn" onclick="toggleTheme()">&#9728;</div></div>
+    <div class="topbar-r">
+      <div class="sync-status" id="sync-status"><div class="sync-dot"></div><span id="sync-text">Offline</span></div>
+      <div class="ibtn" id="theme-btn" onclick="toggleTheme()">&#9728;</div>
+    </div>
   </div>
   <div class="page-wrap" id="pw">
     <!-- MAIN -->
@@ -535,6 +566,34 @@ body.light .modal-input{color-scheme:light}
         </div>
       </div>
       <div class="settings-section">
+        <div class="settings-title">Sinkronisasi Supabase</div>
+        <div class="settings-card">
+          <div class="settings-row">
+            <div class="sr-info">
+              <div class="sr-label">Project URL</div>
+              <div class="sr-sub" style="margin-top:6px">
+                <input class="sr-input-full" id="cfg-sb-url" type="url"
+                  placeholder="https://xxxx.supabase.co" onchange="saveSbCfg()">
+              </div>
+            </div>
+          </div>
+          <div class="settings-row">
+            <div class="sr-info">
+              <div class="sr-label">Anon Public Key</div>
+              <div class="sr-sub" style="margin-top:6px">
+                <input class="sr-input-full" id="cfg-sb-key" type="password"
+                  placeholder="eyJhbGciOi..." onchange="saveSbCfg()">
+              </div>
+            </div>
+          </div>
+          <div class="settings-row" style="cursor:pointer" onclick="syncNow()">
+            <div class="sr-icon">&#8635;</div>
+            <div class="sr-info"><div class="sr-label">Sync Sekarang</div><div class="sr-sub">Tarik &amp; dorong data ke Supabase</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-section">
         <div class="settings-title">Data</div>
         <div class="settings-card">
           <div class="settings-row" style="cursor:pointer" onclick="exportJSON()">
@@ -558,7 +617,7 @@ body.light .modal-input{color-scheme:light}
         <input type="file" id="import-file" accept=".json" style="display:none" onchange="doImport(event)">
       </div>
       <div style="text-align:center;padding:20px 0 8px">
-        <div style="font-family:var(--fm);font-size:9px;color:var(--text-dim);letter-spacing:1px">PERTAMINI v1.2 - PENYIMPANAN LOKAL</div>
+        <div style="font-family:var(--fm);font-size:9px;color:var(--text-dim);letter-spacing:1px">PERTAMINI v1.3</div>
       </div>
     </div>
   </div>
@@ -618,6 +677,7 @@ body.light .modal-input{color-scheme:light}
 
 <script>
 var currentPage = 'main';
+var sbUrl = ''; var sbKey = ''; // Supabase config
 var currentSubtab = 'sell';
 var calcValue = 0;
 var inputBuffer = '';
@@ -653,6 +713,8 @@ function boot() {
   renderHistory();
   updateMainInfoPanel();
   initEventDelegation();
+  loadSbCfg();
+  if (sbUrl && sbKey) syncNow();
 }
 
 function loadData() {
@@ -660,6 +722,128 @@ function loadData() {
 }
 function saveData() {
   localStorage.setItem('pm_txs', JSON.stringify(txs));
+}
+
+// ── SUPABASE ──
+function loadSbCfg() {
+  sbUrl = localStorage.getItem('pm_sb_url') || '';
+  sbKey = localStorage.getItem('pm_sb_key') || '';
+  var urlEl = document.getElementById('cfg-sb-url');
+  var keyEl = document.getElementById('cfg-sb-key');
+  if (urlEl) urlEl.value = sbUrl;
+  if (keyEl) keyEl.value = sbKey;
+  setSyncStatus(sbUrl && sbKey ? 'idle' : 'off');
+}
+
+function saveSbCfg() {
+  sbUrl = (document.getElementById('cfg-sb-url').value || '').trim().replace(/\/$/, '');
+  sbKey = document.getElementById('cfg-sb-key').value.trim();
+  localStorage.setItem('pm_sb_url', sbUrl);
+  localStorage.setItem('pm_sb_key', sbKey);
+  if (sbUrl && sbKey) {
+    showToast('Konfigurasi Supabase disimpan', 'ok');
+    syncNow();
+  }
+}
+
+function setSyncStatus(state, text) {
+  var el = document.getElementById('sync-status');
+  var tx = document.getElementById('sync-text');
+  if (!el) return;
+  el.className = 'sync-status';
+  if (state === 'ok')      { el.classList.add('ok');      if (tx) tx.textContent = text || 'Tersinkron'; }
+  else if (state === 'syncing') { el.classList.add('syncing'); if (tx) tx.textContent = text || 'Sinkron...'; }
+  else if (state === 'err')    { el.classList.add('err');     if (tx) tx.textContent = text || 'Gagal'; }
+  else if (state === 'off')    { if (tx) tx.textContent = 'Offline'; }
+  else { if (tx) tx.textContent = 'Offline'; }
+}
+
+function sbFetch(path, method, body) {
+  return fetch(sbUrl + '/rest/v1/' + path, {
+    method: method || 'GET',
+    headers: {
+      'apikey': sbKey,
+      'Authorization': 'Bearer ' + sbKey,
+      'Content-Type': 'application/json',
+      'Prefer': method === 'POST' ? 'resolution=merge-duplicates' : ''
+    },
+    body: body ? JSON.stringify(body) : undefined
+  });
+}
+
+function txToRow(t) {
+  return {
+    id:        t.id,
+    type:      t.type,
+    amount:    t.amount,
+    note:      t.note || null,
+    ts:        t.ts,
+    liter:     t.liter || null,
+    harga:     t.harga || null,
+    harga_beli: t.hargaBeli || null,
+    is_promo:  t.isPromo || false
+  };
+}
+
+function rowToTx(r) {
+  return {
+    id:        r.id,
+    type:      r.type,
+    amount:    r.amount,
+    note:      r.note || '',
+    ts:        r.ts,
+    liter:     r.liter || null,
+    harga:     r.harga || null,
+    hargaBeli: r.harga_beli || null,
+    isPromo:   r.is_promo || false
+  };
+}
+
+function syncNow() {
+  if (!sbUrl || !sbKey) { showToast('Isi URL dan Key Supabase dulu', 'err'); return; }
+  setSyncStatus('syncing');
+  // Ambil semua data dari Supabase
+  sbFetch('transactions?select=*&order=ts.desc', 'GET')
+    .then(function(r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    })
+    .then(function(remoteRows) {
+      var remoteTxs = remoteRows.map(rowToTx);
+      // Merge: gabungkan lokal + remote, dedup by id
+      var merged = {};
+      txs.forEach(function(t) { merged[t.id] = t; });
+      remoteTxs.forEach(function(t) {
+        // Remote menang jika konflik (bisa dibalik sesuai kebutuhan)
+        if (!merged[t.id]) merged[t.id] = t;
+      });
+      txs = Object.values(merged).sort(function(a,b){ return new Date(b.ts) - new Date(a.ts); });
+      saveData();
+      renderHistory();
+      updateMainInfoPanel();
+      // Push semua lokal ke Supabase (upsert)
+      var rows = txs.map(txToRow);
+      return sbFetch('transactions', 'POST', rows);
+    })
+    .then(function(r) {
+      if (!r.ok) throw new Error('Push HTTP ' + r.status);
+      setSyncStatus('ok');
+      showToast('Sinkronisasi berhasil', 'ok');
+    })
+    .catch(function(err) {
+      setSyncStatus('err', 'Gagal');
+      showToast('Sync gagal: ' + err.message, 'err');
+    });
+}
+
+function sbUpsert(tx) {
+  if (!sbUrl || !sbKey) return;
+  sbFetch('transactions', 'POST', [txToRow(tx)]).catch(function(){});
+}
+
+function sbDelete(id) {
+  if (!sbUrl || !sbKey) return;
+  sbFetch('transactions?id=eq.' + id, 'DELETE').catch(function(){});
 }
 
 function loadCfg() {
@@ -707,7 +891,7 @@ function goPage(name) {
     document.getElementById('nb-'+p).classList.toggle('active', p === name);
   });
   if (name === 'history') renderHistory();
-  if (name === 'settings') loadCfg();
+  if (name === 'settings') { loadCfg(); loadSbCfg(); }
 }
 
 function setSubtab(tab) {
@@ -875,6 +1059,7 @@ function commitTransaction() {
   txs.unshift(tx);
   txs.sort(function(a,b){ return new Date(b.ts) - new Date(a.ts); });
   saveData();
+  sbUpsert(tx);
   var label = currentSubtab === 'sell' ? 'Penjualan' : 'Pembelian';
   showToast(label + ' ' + fmtRp(calcValue) + (liter ? ' - ' + fmtLiter(liter) : '') + ' dicatat', 'ok');
   resetCalc();
@@ -1144,8 +1329,10 @@ function deleteTx() {
 
 function confirmDelete() {
   if (!selectedTxId) return;
+  var deletedId = selectedTxId;
   txs = txs.filter(function(t){ return t.id !== selectedTxId; });
   saveData(); closeTxDetail(); renderHistory();
+  sbDelete(deletedId);
   showToast('Dihapus', 'err');
 }
 
@@ -1173,6 +1360,7 @@ function saveEditTx() {
   tx.liter  = tx.harga && tx.harga > 0 ? newAmt / tx.harga : null;
   txs.sort(function(a,b){ return new Date(b.ts) - new Date(a.ts); });
   saveData(); closeEditTx(); closeTxDetail(); renderHistory();
+  sbUpsert(tx);
   showToast('Transaksi diperbarui', 'ok');
 }
 
@@ -1197,6 +1385,7 @@ function saveAddSaldo() {
   txs.unshift(tx);
   txs.sort(function(a,b){ return new Date(b.ts) - new Date(a.ts); });
   saveData(); closeAddSaldo(); renderHistory();
+  sbUpsert(tx);
   showToast('Saldo ' + fmtRp(amt) + ' ditambahkan', 'ok');
 }
 
@@ -1206,6 +1395,10 @@ function resetData() {
   wrap.innerHTML = '<div style="margin-top:8px;background:var(--surface2);border:1.5px solid var(--red);border-radius:10px;padding:12px 14px;text-align:center;cursor:pointer" onclick="confirmReset()"><span style="font-size:13px;font-weight:800;color:var(--red)">Yakin hapus semua data?</span></div>';
 }
 function confirmReset() {
+  // Hapus semua dari Supabase juga
+  if (sbUrl && sbKey) {
+    sbFetch('transactions?id=neq.NONE', 'DELETE').catch(function(){});
+  }
   txs = []; saveData();
   document.getElementById('reset-confirm-wrap').innerHTML = '';
   renderHistory();
